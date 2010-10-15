@@ -10,10 +10,10 @@ __PACKAGE__->mk_accessors(qw/spec re names/);
 
 sub new {
   my ($class, $spec) = @_;
-  my $self = bless { spec => $spec }, $class;
-  
+  my $self = bless {spec => $spec}, $class;
+
   $self->_compile_spec_to_re;
-  
+
   return $self;
 }
 
@@ -23,14 +23,14 @@ sub match {
 
   my @captured = $url =~ qr{^($re)(/.*)?$};
   return {} unless @captured;
-  
-  my $all = shift @captured;
-  my $rest = pop @captured;
+
+  my $all   = shift @captured;
+  my $rest  = pop @captured;
   my $names = $self->{names};
-  
+
   my %args;
   my @splat;
-  my $i=0;
+  my $i = 0;
   while (@captured) {
     my $n = $names->[$i++];
     if ($n eq '__splat__') {
@@ -43,18 +43,15 @@ sub match {
 
   return {
     matched => $all,
-    args => {
-      %args,
-      ( @splat ? ( splat => \@splat ) : () ),
-    },
-    rest => $rest,
+    args    => {%args, (@splat ? (splat => \@splat) : ()),},
+    rest    => $rest,
   };
 }
 
 sub _compile_spec_to_re {
   my ($self) = @_;
   my $spec = $self->spec;
-  
+
   # compile pattern
   my $names = $self->{names} = [];
   $self->{re} = do {
@@ -83,7 +80,7 @@ sub _compile_spec_to_re {
     !gex;
     qr{$spec};
   };
-  
+
   return;
 }
 
