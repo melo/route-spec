@@ -21,10 +21,11 @@ sub match {
   my ($self, $url) = @_;
   my $re = $self->{re};
 
-  my @captured = $url =~ qr{^($re)$};
+  my @captured = $url =~ qr{^($re)(/.*)?$};
   return {} unless @captured;
   
   my $all = shift @captured;
+  my $rest = pop @captured;
   my $names = $self->{names};
   my %args;
   my @splat;
@@ -44,6 +45,7 @@ sub match {
       %args,
       ( @splat ? ( splat => \@splat ) : () ),
     },
+    rest => $rest,
   };
 }
 
