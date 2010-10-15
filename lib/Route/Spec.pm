@@ -27,10 +27,12 @@ sub match {
   my $all = shift @captured;
   my $rest = pop @captured;
   my $names = $self->{names};
+  
   my %args;
   my @splat;
+  my $i=0;
   while (@captured) {
-    my $n = shift @$names;
+    my $n = $names->[$i++];
     if ($n eq '__splat__') {
       push @splat, shift @captured;
     }
