@@ -8,11 +8,17 @@ use parent 'Class::Accessor::Fast';
 use Carp qw(confess);
 use namespace::clean;
 
-__PACKAGE__->mk_accessors(qw/spec re names parts/);
+__PACKAGE__->mk_accessors(
+  qw/spec re names parts element_re splat_re rest_re/);
 
 sub new {
   my ($class, $spec) = @_;
-  my $self = bless {ref($spec) ? %$spec : (spec => $spec)}, $class;
+  my $self = bless {
+    element_re => '[^/]+',
+    splat_re   => '.+',
+    rest_re    => '/.*',
+    ref($spec) ? %$spec : (spec => $spec)
+  }, $class;
 
   confess("Missing required parameter 'spec', ")
     unless $self->spec;
@@ -24,9 +30,10 @@ sub new {
 
 sub match {
   my ($self, $url) = @_;
-  my $re = $self->{re};
+  my $re      = $self->re;
+  my $rest_re = $self->rest_re;
 
-  my @captured = $url =~ qr{^($re)(/.*)?$};
+  my @captured = $url =~ qr{^($re)($rest_re)?$};
   return {} unless @captured;
 
   my $all   = shift @captured;
@@ -85,8 +92,10 @@ sub url_for {
 }
 
 sub _compile_spec_to_re {
-  my ($self) = @_;
-  my $spec = $self->spec;
+  my ($self)     = @_;
+  my $spec       = $self->spec;
+  my $element_re = $self->element_re;
+  my $splat_re   = $self->splat_re;
 
   # compile pattern
   my $names = $self->{names} = [];
@@ -102,7 +111,7 @@ sub _compile_spec_to_re {
           my ($name, $pattern) = split /:/, $1, 2;
           push @$names, $name;
           
-          $pattern = $pattern ? "($pattern)" : "([^/]+)";
+          $pattern = $pattern ? "($pattern)" : "($element_re)";
           push @$parts, [$name, $pattern];
           $pattern;
         }
@@ -110,13 +119,13 @@ sub _compile_spec_to_re {
           my $name = $2;
           push @$names, $name;
           push @$parts, \$name;
-          "([^/]+)";
+          "($element_re)";
         }
         elsif ($3) {
           my $name = '__splat__';
           push @$names, $name;
           push @$parts, \$name;
-          "(.+)";
+          "($splat_re)";
         }
         else {
           push @$parts, $4;

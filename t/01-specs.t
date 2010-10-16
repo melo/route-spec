@@ -8,9 +8,12 @@ use Test::Deep;
 use Route::Spec;
 
 my @test_cases = (
-  { spec  => '/',
-    names => [],
-    parts => ['/'],
+  { spec       => '/',
+    names      => [],
+    parts      => ['/'],
+    element_re => '[^/]+',
+    splat_re   => '.+',
+    rest_re    => '/.*',
     test_against =>
       [{url => '/', matched => '/', args => {}}, {url => '/foo'}],
     url_for => [{url => '/', args => {}}, {url => '/', args => {x => 1}}],
@@ -226,6 +229,12 @@ for my $tc (@test_cases) {
   is($r->spec, $spec, '... expected spec()');
   ok($r->re, '... has a re()');
   is(ref($r->re), 'Regexp', '... of the expected type');
+
+  for my $re (qw( element_re splat_re rest_re )) {
+    if (my $v = $tc->{$re}) {
+      is($r->$re(), $v, "... re '$re' with the expected '$v' value");
+    }
+  }
 
   my $en    = $tc->{names};
   my $en_c  = scalar @$en;
