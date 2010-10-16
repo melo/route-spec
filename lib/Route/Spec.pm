@@ -12,7 +12,10 @@ __PACKAGE__->mk_accessors(qw/spec re names parts/);
 
 sub new {
   my ($class, $spec) = @_;
-  my $self = bless {spec => $spec}, $class;
+  my $self = bless {ref($spec) ? %$spec : (spec => $spec)}, $class;
+
+  confess("Missing required parameter 'spec', ")
+    unless $self->spec;
 
   $self->_compile_spec_to_re;
 

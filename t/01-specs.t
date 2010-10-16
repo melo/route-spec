@@ -16,7 +16,7 @@ my @test_cases = (
     url_for => [{url => '/', args => {}}, {url => '/', args => {x => 1}}],
   },
 
-  { spec  => '/foo',
+  { spec  => {spec => '/foo'},
     names => [],
     parts => ['/foo'],
     test_against =>
@@ -220,6 +220,8 @@ my @test_cases = (
 for my $tc (@test_cases) {
   my $spec = $tc->{spec};
   my $r    = Route::Spec->new($spec);
+
+  $spec = $spec->{spec} if ref $spec;
   ok($r, "Got R::S for '$spec' spec");
   is($r->spec, $spec, '... expected spec()');
   ok($r->re, '... has a re()');
@@ -279,6 +281,13 @@ for my $tc (@test_cases) {
     }
   }
 }
+
+
+## Bad boys
+throws_ok sub { Route::Spec->new }, qr/Missing required parameter 'spec', /,
+  'No spec, dies, take 1';
+throws_ok sub { Route::Spec->new({}) },
+  qr/Missing required parameter 'spec', /, 'No spec, dies, take 2';
 
 
 ## Thats all folks!
