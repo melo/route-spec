@@ -229,7 +229,7 @@ for my $tc (@test_cases) {
   my $en_c  = scalar @$en;
   my $names = $r->names;
   is(scalar(@$names), $en_c,
-    '... Number of expected named captures correct ($en_c)');
+    "... Number of expected named captures correct ($en_c)");
   cmp_deeply($names, $en, '... and their names are ok too');
 
   my $ep = $tc->{parts};
