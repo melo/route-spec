@@ -5,6 +5,8 @@ package Route::Spec;
 use strict;
 use warnings;
 use parent 'Class::Accessor::Fast';
+use Carp qw(confess);
+use namespace::clean;
 
 __PACKAGE__->mk_accessors(qw/spec re names parts/);
 
@@ -55,12 +57,23 @@ sub url_for {
   my $url = join(
     '',
     map {
-          ref($_)
-        ? $$_ eq '__splat__'
-          ? $args->{splat}[$s++]
-          : $args->{$$_}
-        : $_
-      } @{$self->{parts}}
+      if (my $t = ref($_)) {
+        if ($t eq 'ARRAY') {
+          my $v = $args->{$_->[0]};
+          confess("Bad argument '$v' for name '$_->[0]': doesn't match /$_->[1]/, ")
+            unless $v =~ /^$_->[1]$/;
+          $v;
+        }
+        else {
+          $$_ eq '__splat__'
+            ? $args->{splat}[$s++]
+            : $args->{$$_}
+        }
+      }
+      else {
+        $_
+      }
+    } @{$self->{parts}}
   );
 
   $url .= $rest if $rest;
@@ -85,8 +98,10 @@ sub _compile_spec_to_re {
         if ($1) {
           my ($name, $pattern) = split /:/, $1, 2;
           push @$names, $name;
-          push @$parts, \$name;
-          $pattern ? "($pattern)" : "([^/]+)";
+          
+          $pattern = $pattern ? "($pattern)" : "([^/]+)";
+          push @$parts, [$name, $pattern];
+          $pattern;
         }
         elsif ($2) {
           my $name = $2;

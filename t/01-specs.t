@@ -12,7 +12,7 @@ my @test_cases = (
     names => [],
     test_against =>
       [{url => '/', matched => '/', args => {}}, {url => '/foo'}],
-    url_for => [{'/' => {}}, {'/' => {x => 1}},],
+    url_for => [{url => '/', args => {}}, {url => '/', args => {x => 1}}],
   },
 
   { spec  => '/foo',
@@ -33,8 +33,8 @@ my @test_cases = (
       },
     ],
     url_for => [
-      {'/i/sofia' => {name => 'sofia'}},
-      {'/i/maria' => {name => 'maria', x => 1}},
+      {url => '/i/sofia', args => {name => 'sofia'}},
+      {url => '/i/maria', args => {name => 'maria', x => 1}},
     ],
   },
 
@@ -58,8 +58,10 @@ my @test_cases = (
       },
     ],
     url_for => [
-      {'/i/girl/sofia' => {type => 'girl', name => 'sofia'}},
-      {'/i/boy/maria'  => {type => 'boy',  name => 'maria', x => 1}},
+      {url => '/i/girl/sofia', args => {type => 'girl', name => 'sofia'}},
+      { url  => '/i/boy/maria',
+        args => {type => 'boy', name => 'maria', x => 1}
+      },
     ],
   },
 
@@ -78,7 +80,13 @@ my @test_cases = (
         matched => '/i/t/n/-1/0/1/2.3',
         args    => {type => 't', name => 'n', splat => ['-1/0/1', 2, 3]},
       },
-    ]
+    ],
+    url_for => [
+      { url => '/i/type/me/oh/my/awesome.pl',
+        args =>
+          {type => 'type', name => 'me', splat => ['oh/my', 'awesome', 'pl']}
+      },
+    ],
   },
 
   { spec         => '/i/:type/:name/*/{base:\D{3}\d{4}}.*',
@@ -118,7 +126,26 @@ my @test_cases = (
           splat => ['-1/0/1', '3/4/5/6']
         },
       },
-    ]
+    ],
+    url_for => [
+      { url  => '/i/type/me/oh/my/qwe1234.pl',
+        args => {
+          type  => 'type',
+          name  => 'me',
+          base  => 'qwe1234',
+          splat => ['oh/my', 'pl']
+        }
+      },
+      { exception =>
+          q{Bad argument 'oops' for name 'base': doesn't match /(\D{3}\d{4})/, },
+        args => {
+          type  => 'type',
+          name  => 'me',
+          base  => 'oops',
+          splat => ['oh/my', 'pl']
+        }
+      },
+    ],
   },
 
   { spec         => '/i/:type/:name/*/{base:\D{3}\d{4}}',
@@ -196,14 +223,21 @@ for my $tc (@test_cases) {
     }
     else {
       cmp_deeply($result, {}, '... and a sad story it is, without a match');
-
-#      use Data::Dump qw(pp); print STDERR ">>>>>> ", pp($result), "\n";
     }
   }
 
   for my $uf (@{$tc->{url_for}}) {
-    my ($ex, $args) = %$uf;
-    is($r->url_for($args), $ex, "... url_for() matches expected '$ex'");
+    my ($ex_url, $ex_excp, $args) = @$uf{qw(url exception args)};
+    my $url = eval { $r->url_for($args) };
+    if ($ex_url) {
+      is($url, $ex_url, "... url_for() matches expected '$ex_url'");
+    }
+    elsif ($ex_excp) {
+      my $e = $@;
+      $ex_excp = quotemeta($ex_excp);
+      like($@, qr/^$ex_excp/,
+        'Failed to generate the URL with the proper exception');
+    }
   }
 }
 
