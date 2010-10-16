@@ -67,23 +67,25 @@ sub url_for {
   my $url = join(
     '',
     map {
-      if (my $t = ref($_)) {
+      if (my $t = ref($_))
+      {
         if ($t eq 'ARRAY') {
           my $v = $args->{$_->[0]};
-          confess("Bad argument '$v' for name '$_->[0]': doesn't match /$_->[1]/, ")
+          confess(
+            "Bad argument '$v' for name '$_->[0]': doesn't match /$_->[1]/, ")
             unless $v =~ /^$_->[1]$/;
           $v;
         }
         else {
           $$_ eq '__splat__'
             ? $args->{splat}[$s++]
-            : $args->{$$_}
+            : $args->{$$_};
         }
       }
       else {
-        $_
+        $_;
       }
-    } @{$self->{parts}}
+      } @{$self->{parts}}
   );
 
   $url .= $rest if $rest;
