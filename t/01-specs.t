@@ -216,7 +216,62 @@ my @test_cases = (
         rest => '/and/more',
       },
     ],
-  }
+  },
+
+  ## Actually it could be a generic matcher
+  { spec => {
+      spec =>
+        ':name had a little :pet, and she liked to :action with it {time:\d+} times!',
+      element_re => '\S+',
+      rest_re    => '.*',
+    },
+
+    element_re => '\S+',
+    rest_re    => '.*',
+
+    names => [qw(name pet action time)],
+    parts => [
+      \'name',
+      ' had a little ',
+      \'pet',
+      ', and she liked to ',
+      \'action',
+      ' with it ',
+      ['time', '(\d+)'],
+      ' times!',
+    ],
+    test_against => [
+      { url => 'Mary had a little lamb and she liked to play with it 5 times!'
+      },
+      { url =>
+          'Suzy had a little dog, and she liked to run with it several times!'
+      },
+      { url =>
+          'Maggy had a little boyfriend, and she liked to kiss with it 10 times! For real!',
+        matched =>
+          'Maggy had a little boyfriend, and she liked to kiss with it 10 times!',
+        args => {
+          name   => 'Maggy',
+          pet    => 'boyfriend',
+          action => 'kiss',
+          time   => 10,
+        },
+        rest => ' For real!',
+      },
+    ],
+    url_for => [
+      { url =>
+          'Blanche had a little partner, and she liked to perform with it 20 times! What a show that was!',
+        args => {
+          name   => 'Blanche',
+          pet    => 'partner',
+          action => 'perform',
+          time   => 20
+        },
+        rest => ' What a show that was!',
+      },
+    ],
+  },
 );
 
 
