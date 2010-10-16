@@ -227,7 +227,7 @@ for my $tc (@test_cases) {
   $spec = $spec->{spec} if ref $spec;
   ok($r, "Got R::S for '$spec' spec");
   is($r->spec, $spec, '... expected spec()');
-  ok($r->re, '... has a re()');
+  ok($r->re, '... has a re(), ' . $r->re);
   is(ref($r->re), 'Regexp', '... of the expected type');
 
   for my $re (qw( element_re splat_re rest_re )) {
