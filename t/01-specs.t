@@ -232,6 +232,7 @@ for my $tc (@test_cases) {
     "... Number of expected named captures correct ($en_c)");
   cmp_deeply($names, $en, '... and their names are ok too');
 
+  my $ep = $tc->{parts};
   my $ep_c  = scalar @$ep;
   my $parts = $r->parts;
   is(scalar(@$parts), $ep_c,
