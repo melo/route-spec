@@ -10,6 +10,7 @@ use Route::Spec;
 my @test_cases = (
   { spec  => '/',
     names => [],
+    parts => ['/'],
     test_against =>
       [{url => '/', matched => '/', args => {}}, {url => '/foo'}],
     url_for => [{url => '/', args => {}}, {url => '/', args => {x => 1}}],
@@ -17,6 +18,7 @@ my @test_cases = (
 
   { spec  => '/foo',
     names => [],
+    parts => ['/foo'],
     test_against =>
       [{url => '/'}, {url => '/foo', matched => '/foo', args => {}}],
     url_for => [
@@ -27,6 +29,7 @@ my @test_cases = (
 
   { spec         => '/i/:name',
     names        => [qw(name)],
+    parts        => ['/i/', \'name'],
     test_against => [
       {url => '/i'},
       {url => '/i/foo', matched => '/i/foo', args => {name => 'foo'}},
@@ -44,6 +47,7 @@ my @test_cases = (
 
   { spec         => '/i/:type/:name',
     names        => [qw(type name)],
+    parts        => ['/i/', \'type', '/', \'name'],
     test_against => [
       {url => '/i'},
       {url => '/i/foo'},
@@ -69,8 +73,12 @@ my @test_cases = (
     ],
   },
 
-  { spec         => '/i/:type/:name/*/*.*',
-    names        => [qw(type name __splat__ __splat__ __splat__)],
+  { spec  => '/i/:type/:name/*/*.*',
+    names => [qw(type name __splat__ __splat__ __splat__)],
+    parts => [
+      '/i/', \'type',      '/', \'name', '/', \'__splat__',
+      '/',   \'__splat__', '.', \'__splat__',
+    ],
     test_against => [
       {url => '/i'},
       {url => '/i/foo'},
@@ -93,8 +101,13 @@ my @test_cases = (
     ],
   },
 
-  { spec         => '/i/:type/:name/*/{base:\D{3}\d{4}}.*',
-    names        => [qw(type name __splat__ base __splat__)],
+  { spec  => '/i/:type/:name/*/{base:\D{3}\d{4}}.*',
+    names => [qw(type name __splat__ base __splat__)],
+    parts => [
+      '/i/', \'type', '/', \'name',
+      '/', \'__splat__', '/', ['base', '(\D{3}\d{4})'],
+      '.', \'__splat__',
+    ],
     test_against => [
       {url => '/i'},
       {url => '/i/foo'},
@@ -152,8 +165,12 @@ my @test_cases = (
     ],
   },
 
-  { spec         => '/i/:type/:name/*/{base:\D{3}\d{4}}',
-    names        => [qw(type name __splat__ base)],
+  { spec  => '/i/:type/:name/*/{base:\D{3}\d{4}}',
+    names => [qw(type name __splat__ base)],
+    parts => [
+      '/i/', \'type', '/', \'name',
+      '/', \'__splat__', '/', ['base', '(\D{3}\d{4})'],
+    ],
     test_against => [
       {url => '/i'},
       {url => '/i/foo'},
@@ -214,6 +231,12 @@ for my $tc (@test_cases) {
   is(scalar(@$names), $en_c,
     '... Number of expected named captures correct ($en_c)');
   cmp_deeply($names, $en, '... and their names are ok too');
+
+  my $ep_c  = scalar @$ep;
+  my $parts = $r->parts;
+  is(scalar(@$parts), $ep_c,
+    "... Number of expected url parts correct ($ep_c)");
+  cmp_deeply($parts, $ep, '... and their contents are ok too');
 
   for my $ma (@{$tc->{test_against}}) {
     my ($url, $matched, $args, $rest) = @$ma{qw(url matched args rest)};
