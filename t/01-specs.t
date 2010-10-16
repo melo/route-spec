@@ -18,7 +18,11 @@ my @test_cases = (
   { spec  => '/foo',
     names => [],
     test_against =>
-      [{url => '/'}, {url => '/foo', matched => '/foo', args => {}}]
+      [{url => '/'}, {url => '/foo', matched => '/foo', args => {}}],
+    url_for => [
+      {url => '/foo',     args => {}},
+      {url => '/foo/bar', args => {x => 1}, rest => '/bar'},
+    ],
   },
 
   { spec         => '/i/:name',
@@ -180,7 +184,18 @@ my @test_cases = (
         },
         rest => '/3/4/5/6',
       },
-    ]
+    ],
+    url_for => [
+      { url  => '/i/type/me/oh/my/qwe1234/and/more',
+        args => {
+          type  => 'type',
+          name  => 'me',
+          base  => 'qwe1234',
+          splat => ['oh/my']
+        },
+        rest => '/and/more',
+      },
+    ],
   }
 );
 
@@ -227,8 +242,8 @@ for my $tc (@test_cases) {
   }
 
   for my $uf (@{$tc->{url_for}}) {
-    my ($ex_url, $ex_excp, $args) = @$uf{qw(url exception args)};
-    my $url = eval { $r->url_for($args) };
+    my ($ex_url, $ex_excp, $args, $rest) = @$uf{qw(url exception args rest)};
+    my $url = eval { $r->url_for($args, $rest) };
     if ($ex_url) {
       is($url, $ex_url, "... url_for() matches expected '$ex_url'");
     }
