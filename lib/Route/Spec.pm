@@ -6,7 +6,7 @@ use strict;
 use warnings;
 use parent 'Class::Accessor::Fast';
 
-__PACKAGE__->mk_accessors(qw/spec re names/);
+__PACKAGE__->mk_accessors(qw/spec re names parts/);
 
 sub new {
   my ($class, $spec) = @_;
@@ -48,12 +48,33 @@ sub match {
   };
 }
 
+sub url_for {
+  my ($self, $args, $rest) = @_;
+  my $s = 0;
+
+  my $url = join(
+    '',
+    map {
+          ref($_)
+        ? $$_ eq '__splat__'
+          ? $args->{splat}[$s++]
+          : $args->{$$_}
+        : $_
+      } @{$self->{parts}}
+  );
+
+  $url .= $rest if $rest;
+
+  return $url;
+}
+
 sub _compile_spec_to_re {
   my ($self) = @_;
   my $spec = $self->spec;
 
   # compile pattern
   my $names = $self->{names} = [];
+  my $parts = $self->{parts} = [];
   $self->{re} = do {
     $spec =~ s!
         \{((?:\{[0-9,]+\}|[^{}]+)+)\} | # /blog/{year:\d{4}}
@@ -64,17 +85,23 @@ sub _compile_spec_to_re {
         if ($1) {
           my ($name, $pattern) = split /:/, $1, 2;
           push @$names, $name;
+          push @$parts, \$name;
           $pattern ? "($pattern)" : "([^/]+)";
         }
         elsif ($2) {
-          push @$names, $2;
+          my $name = $2;
+          push @$names, $name;
+          push @$parts, \$name;
           "([^/]+)";
         }
         elsif ($3) {
-          push @$names, '__splat__';
+          my $name = '__splat__';
+          push @$names, $name;
+          push @$parts, \$name;
           "(.+)";
         }
         else {
+          push @$parts, $4;
           quotemeta($4);
         }
     !gex;

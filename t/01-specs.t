@@ -11,7 +11,8 @@ my @test_cases = (
   { spec  => '/',
     names => [],
     test_against =>
-      [{url => '/', matched => '/', args => {}}, {url => '/foo'}]
+      [{url => '/', matched => '/', args => {}}, {url => '/foo'}],
+    url_for => [{'/' => {}}, {'/' => {x => 1}},],
   },
 
   { spec  => '/foo',
@@ -30,7 +31,11 @@ my @test_cases = (
         args    => {name => 'foo'},
         rest    => '/bar'
       },
-    ]
+    ],
+    url_for => [
+      {'/i/sofia' => {name => 'sofia'}},
+      {'/i/maria' => {name => 'maria', x => 1}},
+    ],
   },
 
   { spec         => '/i/:type/:name',
@@ -51,7 +56,11 @@ my @test_cases = (
         args    => {type => 'foo', name => 'bar'},
         rest    => '/more',
       },
-    ]
+    ],
+    url_for => [
+      {'/i/girl/sofia' => {type => 'girl', name => 'sofia'}},
+      {'/i/boy/maria'  => {type => 'boy',  name => 'maria', x => 1}},
+    ],
   },
 
   { spec         => '/i/:type/:name/*/*.*',
@@ -132,7 +141,7 @@ my @test_cases = (
           base  => 'bbb1122',
           splat => ['-1/0/1'],
         },
-        rest  => '/3',
+        rest => '/3',
       },
       { url     => '/i/t/n/-1/0/1/bbb1122/3/4/5/6',
         matched => '/i/t/n/-1/0/1/bbb1122',
@@ -142,7 +151,7 @@ my @test_cases = (
           base  => 'bbb1122',
           splat => ['-1/0/1'],
         },
-        rest  => '/3/4/5/6',
+        rest => '/3/4/5/6',
       },
     ]
   }
@@ -182,12 +191,19 @@ for my $tc (@test_cases) {
       else {
         ok(!defined($result->{result}), '... and we have a exact match');
       }
+      is($r->url_for($args, $rest),
+        $url, "... and url_for() reverts the process fine");
     }
     else {
       cmp_deeply($result, {}, '... and a sad story it is, without a match');
 
 #      use Data::Dump qw(pp); print STDERR ">>>>>> ", pp($result), "\n";
     }
+  }
+
+  for my $uf (@{$tc->{url_for}}) {
+    my ($ex, $args) = %$uf;
+    is($r->url_for($args), $ex, "... url_for() matches expected '$ex'");
   }
 }
 
